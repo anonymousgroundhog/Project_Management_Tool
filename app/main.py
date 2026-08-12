@@ -141,6 +141,51 @@ def delete_project(project_id: int, session: Session = Depends(get_session)):
     return RedirectResponse("/", status_code=303)
 
 
+# --- ideas ------------------------------------------------------------------
+
+
+@app.get("/ideas", response_class=HTMLResponse)
+def ideas_page(
+    request: Request,
+    topic: str = "",
+    count: str = "",
+    session: Session = Depends(get_session),
+):
+    """Suggest projects for a topic. Renders the form when no topic is given."""
+    from app import ideas as idea_engine
+
+    result = None
+    error = ""
+    if topic.strip():
+        try:
+            result = idea_engine.generate_ideas(topic, count or None)
+        except idea_engine.IdeaError as exc:
+            error = str(exc)
+
+    context = {
+        "result": result,
+        "error": error,
+        "topic": topic,
+        "count": count,
+        "running": services.running_timer(session),
+    }
+    if request.headers.get("HX-Request"):
+        return templates.TemplateResponse(request, "_ideas.html", context)
+    return templates.TemplateResponse(request, "ideas.html", context)
+
+
+@app.post("/ideas/accept")
+def accept_idea(
+    name: str = Form(...),
+    purpose: str = Form(""),
+    tasks: list[str] = Form(default=[]),
+    session: Session = Depends(get_session),
+):
+    """Create a real project from a suggested idea and open it."""
+    project = services.create_project_from_idea(session, name, purpose, tasks)
+    return RedirectResponse(f"/projects/{project.id}", status_code=303)
+
+
 # --- members ----------------------------------------------------------------
 
 

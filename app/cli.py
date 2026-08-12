@@ -128,6 +128,37 @@ def cmd_rm_task(args, session):
     print(f"Deleted task {args.task_id}: {title}")
 
 
+def cmd_ideas(args, session):
+    from app import ideas as idea_engine
+
+    result = idea_engine.generate_ideas(args.topic, args.count)
+
+    # Validate before printing, so a bad --accept doesn't interleave the error
+    # with a full page of ideas.
+    if args.accept is not None and not 1 <= args.accept <= len(result.ideas):
+        raise services.DomainError(
+            f"--accept must be between 1 and {len(result.ideas)}"
+        )
+
+    print(f"{len(result.ideas)} idea(s) for '{result.topic}':")
+    if result.note:
+        print(f"({result.note})")
+    print()
+    for index, idea in enumerate(result.ideas, start=1):
+        print(f"{index}. {idea.name}")
+        print(f"   Purpose: {idea.purpose}")
+        for task in idea.tasks:
+            print(f"     - {task}")
+        print()
+
+    if args.accept is not None:
+        chosen = result.ideas[args.accept - 1]
+        project = services.create_project_from_idea(
+            session, chosen.name, chosen.purpose, chosen.tasks
+        )
+        print(f"Created project {project.id}: {project.name}")
+
+
 def cmd_members(args, session):
     members = services.all_members(session)
     if not members:
@@ -357,6 +388,17 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--overdue", action="store_true")
     p.set_defaults(func=cmd_search)
 
+    p = sub.add_parser("ideas", help="suggest project ideas for a topic")
+    p.add_argument("topic")
+    p.add_argument("--count", type=int, help=f"how many ideas (max {8})")
+    p.add_argument(
+        "--accept",
+        type=int,
+        metavar="N",
+        help="create a project from the Nth idea listed",
+    )
+    p.set_defaults(func=cmd_ideas)
+
     p = sub.add_parser("members", help="list people")
     p.set_defaults(func=cmd_members)
 
@@ -430,10 +472,12 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    from app.ideas import IdeaError
+
     session = _session()
     try:
         args.func(args, session)
-    except (services.DomainError, LookupError) as exc:
+    except (services.DomainError, LookupError, IdeaError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1
     finally:

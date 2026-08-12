@@ -304,6 +304,19 @@ def create_project(session: Session, name: str, purpose: str = "") -> Project:
     return project
 
 
+def create_project_from_idea(
+    session: Session, name: str, purpose: str, tasks: Iterable[str]
+) -> Project:
+    """Turn a generated idea into a project with its starter tasks."""
+    project = create_project(session, name, purpose)
+    for title in tasks:
+        title = (title or "").strip()
+        if title:
+            create_task(session, project, title=title)
+    session.refresh(project)
+    return project
+
+
 def update_project(
     session: Session,
     project: Project,

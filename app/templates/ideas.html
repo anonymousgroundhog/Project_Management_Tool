@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Project ideas{% endblock %}
+{% block content %}
+<section class="panel">
+  <h1>Project ideas</h1>
+  <p class="meta">
+    Give a topic and get project suggestions, each with a purpose and a few
+    starter tasks. Accept one and it becomes a real project.
+  </p>
+  <form class="row wrap" hx-get="/ideas" hx-target="#ideas" hx-swap="outerHTML"
+        hx-push-url="true" hx-indicator="#idea-spinner">
+    <input name="topic" value="{{ topic }}" placeholder="A topic, e.g. home automation"
+           required maxlength="120" autofocus>
+    <select name="count">
+      {% for n in [3, 5, 8] %}
+      <option value="{{ n }}" {{ 'selected' if count == n|string or (not count and n == 5) }}>
+        {{ n }} ideas
+      </option>
+      {% endfor %}
+    </select>
+    <button type="submit">Suggest projects</button>
+    <span id="idea-spinner" class="htmx-indicator meta">Thinking…</span>
+  </form>
+</section>
+
+{% include "_ideas.html" %}
+{% endblock %}

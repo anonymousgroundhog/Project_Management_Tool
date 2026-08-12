@@ -1,0 +1,35 @@
+<div id="ideas">
+  {% if error %}
+    <section class="panel"><p class="empty">{{ error }}</p></section>
+  {% elif result %}
+    <section class="panel">
+      <h2>{{ result.ideas|length }} idea{{ '' if result.ideas|length == 1 else 's' }} for “{{ result.topic }}”</h2>
+      <p class="meta">
+        {% if result.source == "claude" %}Written for this topic by Claude.
+        {% else %}{{ result.note }}{% endif %}
+      </p>
+    </section>
+
+    <ul class="cards">
+      {% for idea in result.ideas %}
+      <li class="card">
+        <h2>{{ idea.name }}</h2>
+        <p class="purpose">{{ idea.purpose }}</p>
+        {% if idea.tasks %}
+        <ul class="idea-tasks">
+          {% for task in idea.tasks %}<li>{{ task }}</li>{% endfor %}
+        </ul>
+        {% endif %}
+        <form method="post" action="/ideas/accept">
+          <input type="hidden" name="name" value="{{ idea.name }}">
+          <input type="hidden" name="purpose" value="{{ idea.purpose }}">
+          {% for task in idea.tasks %}
+          <input type="hidden" name="tasks" value="{{ task }}">
+          {% endfor %}
+          <button type="submit">Start this project</button>
+        </form>
+      </li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+</div>

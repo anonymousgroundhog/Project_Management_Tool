@@ -263,3 +263,16 @@ select[multiple] { min-height: 2rem; }
 .badge.status-blocked, .badge.overdue { color: var(--danger); border-color: currentColor; }
 
 .empty { color: var(--muted); padding: 1rem; }
+
+.idea-tasks {
+  margin: .1rem 0 .8rem 1.1rem;
+  padding: 0;
+  color: var(--muted);
+  font-size: .88rem;
+}
+
+.idea-tasks li { margin: .15rem 0; }
+
+.htmx-indicator { display: none; }
+.htmx-request .htmx-indicator,
+.htmx-request.htmx-indicator { display: inline; }

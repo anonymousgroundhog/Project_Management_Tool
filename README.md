@@ -16,6 +16,26 @@ Open http://127.0.0.1:8000
 The SQLite file `pmtool.db` is created next to this README on first start.
 Set `PMTOOL_DB=/path/to/other.db` to use a different file.
 
+## Project ideas and the Claude API
+
+`/ideas` (and `python -m app.cli ideas "<topic>"`) suggests projects for a
+topic. There are two backends and the output shape is identical either way:
+
+- **Claude** — used when the Anthropic SDK finds a credential:
+  `ANTHROPIC_API_KEY`, `ANTHROPIC_AUTH_TOKEN`, or a profile from
+  `ant auth login`. Ideas are written for the specific topic. Each call costs
+  money and needs network access.
+- **Offline templates** — used otherwise. Ideas are the topic combined with
+  project archetypes (audit, prototype, reliability review, ...). Useful as a
+  brainstorming prompt, but not genuinely novel.
+
+The page and the CLI both say which backend produced the ideas. If a Claude
+call fails or is declined, the offline ideas are shown instead along with the
+reason — the feature never hard-fails.
+
+Set `PMTOOL_OFFLINE_IDEAS=1` to force the offline generator even when a key is
+present. The test suite sets it, so tests never make a network call.
+
 ## Schema changes
 
 `init_db()` runs on startup: it creates any missing tables, then adds columns
@@ -48,6 +68,10 @@ drops, type changes) needs a real migration tool such as Alembic.
   rather than restarting at zero. Time between sessions is not counted. Only
   one timer runs at a time; starting a second stops the first and banks its
   time. Totals roll up from subtasks to tasks to projects.
+- **Project ideas** — give a topic and get suggested projects, each with a
+  purpose and starter tasks. Accept one and it becomes a real project. Uses
+  Claude when an API key is available, and an offline template generator
+  otherwise, so the feature works with no key and no network.
 - **Export** to PDF, Markdown, CSV, or JSON, for everything or one project.
   The PDF is a printable report: one project per page, with the purpose, team,
   progress, and a task table showing subtasks, tags, assignees, due dates, and
@@ -84,6 +108,10 @@ python -m app.cli add-project "Apollo" --purpose "Land it"
 python -m app.cli add-task 1 "Write spec" --tags "api docs" --due 2030-05-01 --estimate 1h30m
 python -m app.cli add-task 1 "Draft outline" --parent 1     # subtask
 python -m app.cli show 1
+
+# project ideas
+python -m app.cli ideas "home automation" --count 5
+python -m app.cli ideas "home automation" --accept 2   # create a project from idea 2
 
 # people and assignment
 python -m app.cli add-member "Ada" --role lead --email ada@example.com
@@ -126,6 +154,7 @@ app/
   models.py      ORM models
   db.py          engine, session, schema bootstrap
   pdf.py         PDF rendering of the export payload
+  ideas.py       project idea generation (Claude, with an offline fallback)
   cli.py         command line front end
   templates/     Jinja templates (files starting with _ are HTMX fragments)
   static/        style.css, vendored htmx.min.js
@@ -137,6 +166,7 @@ tests/
   test_multi_assignee.py  several assignees per task
   test_timing.py     cumulative timing across sessions
   test_pdf.py        PDF export
+  test_ideas.py      idea generation, offline fallback, accepting an idea
 ```
 
 ## Tests
