@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="panel">
+  <h1>Projects</h1>
+  <nav class="filters">
+    <a href="/" class="{{ 'on' if not active_filter }}">Current</a>
+    {% for s in project_statuses %}
+      <a href="/?status={{ s }}" class="{{ 'on' if active_filter == s }}">{{ s.replace('_', ' ') }}</a>
+    {% endfor %}
+  </nav>
+
+  <form method="post" action="/projects" class="stack">
+    <input name="name" placeholder="Project name" required maxlength="200">
+    <textarea name="purpose" rows="2" placeholder="Purpose — why this project exists"></textarea>
+    <button type="submit">Add project</button>
+  </form>
+</section>
+
+<ul class="cards">
+  {% for p in projects %}
+  <li class="card">
+    <div class="card-head">
+      <a href="/projects/{{ p.id }}"><h2>{{ p.name }}</h2></a>
+      <span class="badge status-{{ p.status }}">{{ p.status.replace('_', ' ') }}</span>
+    </div>
+    <p class="purpose">{{ p.purpose or "No purpose recorded." }}</p>
+    <div class="meter" title="{{ p.progress }}% done">
+      <span style="width: {{ p.progress }}%"></span>
+    </div>
+    <p class="meta">
+      {{ p.progress }}% done · {{ p.open_tasks }} open of {{ p.tasks|length }}
+      {%- if p.tracked_seconds %} · ⏱ {{ format_duration(p.tracked_seconds) }}{% endif %}
+    </p>
+  </li>
+  {% else %}
+  <li class="empty">No projects yet.</li>
+  {% endfor %}
+</ul>
+{% endblock %}

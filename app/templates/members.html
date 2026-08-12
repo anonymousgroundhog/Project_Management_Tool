@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Team{% endblock %}
+{% block content %}
+<section class="panel">
+  <h1>People</h1>
+  <p class="meta">
+    Members are shared across projects. Add someone to a project from that
+    project's page, then assign them to its tasks.
+  </p>
+  <form method="post" action="/members" class="row wrap">
+    <input name="name" placeholder="Name" required maxlength="120">
+    <input name="email" placeholder="Email" maxlength="200">
+    <input name="role" placeholder="Role, e.g. designer" maxlength="80">
+    <button type="submit">Add person</button>
+  </form>
+</section>
+
+<ul class="cards">
+  {% for member in members %}
+  <li class="card">
+    <form method="post" action="/members/{{ member.id }}/edit" class="row wrap">
+      <span class="avatar">{{ member.initials }}</span>
+      <input name="name" value="{{ member.name }}" required maxlength="120">
+      <input name="email" value="{{ member.email }}" placeholder="Email" maxlength="200">
+      <input name="role" value="{{ member.role }}" placeholder="Role" maxlength="80">
+      <button type="submit">Save</button>
+    </form>
+    <p class="meta">
+      {{ member.open_task_count }} open task{{ '' if member.open_task_count == 1 else 's' }}
+      · on {{ member.projects|length }} project{{ '' if member.projects|length == 1 else 's' }}
+      {%- for p in member.projects %} · <a href="/projects/{{ p.id }}">{{ p.name }}</a>{% endfor %}
+      · <a href="/search?assignee={{ member.name }}">their tasks</a>
+    </p>
+    <form method="post" action="/members/{{ member.id }}/delete"
+          onsubmit="return confirm('Delete {{ member.name }}? Their tasks stay but become unassigned.')">
+      <button type="submit" class="danger">Delete person</button>
+    </form>
+  </li>
+  {% else %}
+  <li class="empty">No people yet.</li>
+  {% endfor %}
+</ul>
+{% endblock %}

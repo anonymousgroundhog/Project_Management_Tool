@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Search{% endblock %}
+{% block content %}
+<section class="panel">
+  <h1>Search tasks</h1>
+  <form class="row wrap" hx-get="/search" hx-target="#results" hx-swap="outerHTML"
+        hx-trigger="submit, input from:input[name='q'] delay:300ms, change from:select, change from:input[type='checkbox']"
+        hx-push-url="true">
+    <input name="q" value="{{ q }}" placeholder="Search titles, notes, project names" autofocus>
+    <select name="tag">
+      <option value="">any tag</option>
+      {% for t in tags %}
+      <option value="{{ t.name }}" {{ 'selected' if tag == t.name }}>#{{ t.name }}</option>
+      {% endfor %}
+    </select>
+    <select name="status">
+      <option value="">any status</option>
+      {% for s in task_statuses %}
+      <option value="{{ s }}" {{ 'selected' if status == s }}>{{ s }}</option>
+      {% endfor %}
+    </select>
+    <select name="priority">
+      <option value="">any priority</option>
+      {% for p in priorities %}
+      <option value="{{ p }}" {{ 'selected' if priority == p }}>{{ p }}</option>
+      {% endfor %}
+    </select>
+    <select name="assignee">
+      <option value="">anyone</option>
+      <option value="unassigned" {{ 'selected' if assignee == 'unassigned' }}>unassigned</option>
+      {% for m in members %}
+      <option value="{{ m.name }}" {{ 'selected' if assignee == m.name }}>{{ m.name }}</option>
+      {% endfor %}
+    </select>
+    <label class="inline"><input type="checkbox" name="overdue" value="1" {{ 'checked' if overdue }}> overdue only</label>
+    <button type="submit">Search</button>
+  </form>
+</section>
+
+{% include "_results.html" %}
+{% endblock %}

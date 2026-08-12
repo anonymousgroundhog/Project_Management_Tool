@@ -1,0 +1,29 @@
+<section class="panel" id="results">
+  <h2>{{ tasks|length }} result{{ '' if tasks|length == 1 else 's' }}</h2>
+  <ul class="tasks">
+    {% for task in tasks %}
+    <li class="task status-{{ task.status }}">
+      <div class="task-main">
+        <div class="task-body">
+          <a class="title" href="/projects/{{ task.project_id }}">{{ task.title }}</a>
+          <span class="notes">in {{ task.project.name }}{% if task.parent_id %} · subtask{% endif %}</span>
+          <span class="tags">
+            <span class="badge prio-{{ task.priority }}">{{ task.priority }}</span>
+            <span class="badge status-{{ task.status }}">{{ task.status }}</span>
+            {% for m in task.assignees %}
+              <span class="badge assignee">@{{ m.name }}</span>
+            {% else %}
+              <span class="badge unassigned">unassigned</span>
+            {% endfor %}
+            {% if task.due %}<span class="badge {{ 'overdue' if task.overdue }}">due {{ task.due }}</span>{% endif %}
+            {% if task.tracked_seconds %}<span class="badge tracked">⏱ {{ task.tracked_display }}</span>{% endif %}
+            {% for t in task.tags %}<a class="badge tag" href="/search?tag={{ t.name }}">#{{ t.name }}</a>{% endfor %}
+          </span>
+        </div>
+      </div>
+    </li>
+    {% else %}
+    <li class="empty">No tasks match.</li>
+    {% endfor %}
+  </ul>
+</section>

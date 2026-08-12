@@ -1,0 +1,30 @@
+<div id="team">
+  <ul class="team">
+    {% for member in project.members %}
+    <li class="member-chip">
+      <span class="avatar">{{ member.initials }}</span>
+      <span class="member-name">
+        {{ member.name }}{% if member.role %} <span class="muted">· {{ member.role }}</span>{% endif %}
+      </span>
+      <button class="danger"
+              hx-post="/projects/{{ project.id }}/members/{{ member.id }}/remove"
+              hx-target="#team" hx-swap="outerHTML"
+              hx-confirm="Remove {{ member.name }} from this project? Their assignments here are cleared."
+              aria-label="Remove {{ member.name }}">✕</button>
+    </li>
+    {% else %}
+    <li class="empty">Nobody on this project yet.</li>
+    {% endfor %}
+  </ul>
+
+  <form class="row" hx-post="/projects/{{ project.id }}/members"
+        hx-target="#team" hx-swap="outerHTML" hx-on::after-request="this.reset()">
+    <input name="name" list="member-options" placeholder="Add a person by name" required maxlength="120">
+    <datalist id="member-options">
+      {% for m in all_members %}
+        {% if m not in project.members %}<option value="{{ m.name }}">{% endif %}
+      {% endfor %}
+    </datalist>
+    <button type="submit">Add to team</button>
+  </form>
+</div>

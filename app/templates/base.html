@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Projects{% endblock %}</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="/static/htmx.min.js" defer></script>
+</head>
+<body>
+  <header>
+    <a class="brand" href="/">Project Tracker</a>
+    <nav class="topnav">
+      <a href="/search">Search</a>
+      <a href="/members">Team</a>
+      <a href="/export.pdf">Export PDF</a>
+      <a href="/export.md">MD</a>
+      <a href="/export.csv">CSV</a>
+      <a href="/export.json">JSON</a>
+    </nav>
+  </header>
+  {% if running %}
+  <div class="running-bar">
+    ⏱ Running: <a href="/projects/{{ running.task.project_id }}">{{ running.task.title }}</a>
+    · {{ format_duration(running.task.tracked_seconds) }} total
+    {%- if running.task.own_seconds > running.seconds %}
+      <span class="session">(this session {{ format_duration(running.seconds) }})</span>
+    {%- endif %}
+  </div>
+  {% endif %}
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

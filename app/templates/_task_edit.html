@@ -1,0 +1,34 @@
+<li class="task editing" id="task-{{ task.id }}">
+  <form class="row wrap" hx-post="/tasks/{{ task.id }}/edit"
+        hx-target="#task-{{ task.id }}" hx-swap="outerHTML">
+    <input name="title" value="{{ task.title }}" required maxlength="300">
+    <select name="status">
+      {% for s in task_statuses %}
+      <option value="{{ s }}" {{ 'selected' if task.status == s }}>{{ s }}</option>
+      {% endfor %}
+    </select>
+    <select name="priority">
+      {% for p in priorities %}
+      <option value="{{ p }}" {{ 'selected' if task.priority == p }}>{{ p }}</option>
+      {% endfor %}
+    </select>
+    <select name="assignee" multiple size="3" title="Assign one or more people">
+      {% for m in task.project.members %}
+      <option value="{{ m.id }}" {{ 'selected' if m.id in task.assignee_ids }}>{{ m.name }}</option>
+      {% endfor %}
+    </select>
+    <input type="date" name="due" value="{{ task.due or '' }}">
+    <input name="estimate" value="{{ task.estimate_minutes or '' }}" placeholder="Est (90 or 1h30m)" size="12">
+    <input name="tags" value="{{ task.tag_names|join(' ') }}" placeholder="tags: api docs">
+    <input name="notes" value="{{ task.notes }}" placeholder="Notes">
+    <button type="submit">Save</button>
+    <button type="button" hx-get="/tasks/{{ task.id }}/row"
+            hx-target="#task-{{ task.id }}" hx-swap="outerHTML">Cancel</button>
+  </form>
+  <form class="row log-form" hx-post="/tasks/{{ task.id }}/timer/log"
+        hx-target="#task-{{ task.id }}" hx-swap="outerHTML">
+    <input name="minutes" placeholder="Log time (45 or 1h15m)" required size="18">
+    <input name="note" placeholder="What was done">
+    <button type="submit">Log</button>
+  </form>
+</li>

@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}{{ project.name }}{% endblock %}
+{% block content %}
+<section class="panel">
+  <form method="post" action="/projects/{{ project.id }}/edit" class="stack">
+    <input name="name" value="{{ project.name }}" required maxlength="200">
+    <label>Purpose
+      <textarea name="purpose" rows="3" placeholder="Why this project exists">{{ project.purpose }}</textarea>
+    </label>
+    <div class="row">
+      <select name="status">
+        {% for s in project_statuses %}
+        <option value="{{ s }}" {{ 'selected' if project.status == s }}>{{ s.replace('_', ' ') }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit">Save project</button>
+    </div>
+  </form>
+  <p class="meta">
+    {{ project.progress }}% done · {{ project.open_tasks }} open
+    {%- if project.unassigned_tasks %} · {{ project.unassigned_tasks }} unassigned{% endif %}
+    {%- if project.tracked_seconds %} · ⏱ {{ format_duration(project.tracked_seconds) }} tracked{% endif %}
+  </p>
+  <p class="meta">
+    Export this project:
+    <a href="/export.pdf?project_id={{ project.id }}">PDF</a> ·
+    <a href="/export.md?project_id={{ project.id }}">Markdown</a> ·
+    <a href="/export.csv?project_id={{ project.id }}">CSV</a> ·
+    <a href="/export.json?project_id={{ project.id }}">JSON</a>
+  </p>
+  <form method="post" action="/projects/{{ project.id }}/delete"
+        onsubmit="return confirm('Delete this project and all of its tasks? This cannot be undone.')">
+    <button type="submit" class="danger">Delete project</button>
+  </form>
+</section>
+
+<section class="panel">
+  <h2>Team</h2>
+  {% include "_team.html" %}
+</section>
+
+<section class="panel">
+  <h2>Tasks</h2>
+  <form class="row wrap" hx-post="/projects/{{ project.id }}/tasks"
+        hx-target="#tasks" hx-swap="beforeend" hx-on::after-request="this.reset()">
+    <input name="title" placeholder="Task title" required maxlength="300">
+    <select name="priority">
+      {% for p in priorities %}<option value="{{ p }}" {{ 'selected' if p == 'med' }}>{{ p }}</option>{% endfor %}
+    </select>
+    {% if project.members %}
+    <select name="assignee" multiple size="1" title="Assign one or more people">
+      {% for m in project.members %}<option value="{{ m.id }}">{{ m.name }}</option>{% endfor %}
+    </select>
+    {% endif %}
+    <input type="date" name="due">
+    <input name="estimate" placeholder="Est (90 or 1h30m)" size="14">
+    <input name="tags" placeholder="tags: api docs">
+    <input name="notes" placeholder="Notes">
+    <button type="submit">Add task</button>
+  </form>
+
+  <ul id="tasks" class="tasks">
+    {% for task in project.root_tasks %}
+      {% include "_task_row.html" %}
+    {% endfor %}
+  </ul>
+</section>
+{% endblock %}

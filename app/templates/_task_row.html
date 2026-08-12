@@ -1,0 +1,129 @@
+<li class="task status-{{ task.status }}" id="task-{{ task.id }}">
+  <div class="task-main">
+    <button class="toggle" hx-post="/tasks/{{ task.id }}/toggle"
+            hx-target="#task-{{ task.id }}" hx-swap="outerHTML"
+            aria-label="Toggle done">{{ "☑" if task.status == "done" else "☐" }}</button>
+    <div class="task-body">
+      <span class="title">{{ task.title }}</span>
+      {% if task.notes %}<span class="notes">{{ task.notes }}</span>{% endif %}
+      <span class="tags">
+        <span class="badge prio-{{ task.priority }}">{{ task.priority }}</span>
+        <span class="badge status-{{ task.status }}">{{ task.status }}</span>
+        {% for m in task.assignees %}
+          <a class="badge assignee" href="/search?assignee={{ m.name }}">@{{ m.name }}</a>
+        {% else %}
+          <span class="badge unassigned">unassigned</span>
+        {% endfor %}
+        {% if task.due %}<span class="badge {{ 'overdue' if task.overdue }}">due {{ task.due }}</span>{% endif %}
+        {% if task.subtask_progress %}<span class="badge">subtasks {{ task.subtask_progress }}</span>{% endif %}
+        {% if task.estimate_minutes %}<span class="badge">est {{ format_duration(task.estimate_minutes * 60) }}</span>{% endif %}
+        {% if task.tracked_seconds %}
+          <span class="badge tracked {{ 'ticking' if task.is_running }}"
+                title="Total across all sessions">⏱ {{ task.tracked_display }}</span>
+        {% endif %}
+        {% for tag in task.tags %}
+          <a class="badge tag" href="/search?tag={{ tag.name }}">#{{ tag.name }}</a>
+        {% endfor %}
+      </span>
+    </div>
+    <span class="task-actions">
+      {% if task.project.members %}
+      <details class="assign-picker">
+        <summary title="Assign people">
+          {% if task.assignees %}👥 {{ task.assignees|length }}{% else %}👤 Assign{% endif %}
+        </summary>
+        <form class="assign-menu" hx-post="/tasks/{{ task.id }}/assign"
+              hx-target="#task-{{ task.id }}" hx-swap="outerHTML"
+              hx-trigger="change">
+          {% for m in task.project.members %}
+          <label class="inline">
+            <input type="checkbox" name="assignee" value="{{ m.id }}"
+                   {{ 'checked' if m.id in task.assignee_ids }}>
+            {{ m.name }}
+          </label>
+          {% endfor %}
+        </form>
+      </details>
+      {% endif %}
+      {% if task.is_running %}
+        <button class="running" hx-post="/tasks/{{ task.id }}/timer/stop"
+                hx-target="#task-{{ task.id }}" hx-swap="outerHTML">⏹ Stop</button>
+      {% else %}
+        <button hx-post="/tasks/{{ task.id }}/timer/start"
+                hx-target="#task-{{ task.id }}" hx-swap="outerHTML">▶ Start</button>
+      {% endif %}
+      <button hx-get="/tasks/{{ task.id }}/edit" hx-target="#task-{{ task.id }}" hx-swap="outerHTML">Edit</button>
+      <button class="danger" hx-delete="/tasks/{{ task.id }}"
+              hx-target="#task-{{ task.id }}" hx-swap="outerHTML"
+              hx-confirm="Delete this task{% if task.subtasks %} and its {{ task.subtasks|length }} subtask(s){% endif %}?">Delete</button>
+    </span>
+  </div>
+
+  {% if task.parent_id is none %}
+  <ul class="subtasks">
+    {% for sub in task.subtasks %}
+      <li class="subtask status-{{ sub.status }}" id="subtask-{{ sub.id }}">
+        <button class="toggle" hx-post="/tasks/{{ sub.id }}/toggle"
+                hx-target="#task-{{ task.id }}" hx-swap="outerHTML"
+                aria-label="Toggle done">{{ "☑" if sub.status == "done" else "☐" }}</button>
+        <span class="title">{{ sub.title }}</span>
+        <span class="badge prio-{{ sub.priority }}">{{ sub.priority }}</span>
+        {% for m in sub.assignees %}
+          <a class="badge assignee" href="/search?assignee={{ m.name }}">@{{ m.name }}</a>
+        {% endfor %}
+        {% if sub.due %}<span class="badge {{ 'overdue' if sub.overdue }}">due {{ sub.due }}</span>{% endif %}
+        {% if sub.tracked_seconds %}
+          <span class="badge tracked {{ 'ticking' if sub.is_running }}"
+                title="Total across all sessions">⏱ {{ sub.tracked_display }}</span>
+        {% endif %}
+        <span class="task-actions">
+          {% if task.project.members %}
+          <details class="assign-picker">
+            <summary title="Assign people">
+              {% if sub.assignees %}👥 {{ sub.assignees|length }}{% else %}👤{% endif %}
+            </summary>
+            <form class="assign-menu" hx-post="/tasks/{{ sub.id }}/assign"
+                  hx-target="#task-{{ task.id }}" hx-swap="outerHTML"
+                  hx-trigger="change">
+              {% for m in task.project.members %}
+              <label class="inline">
+                <input type="checkbox" name="assignee" value="{{ m.id }}"
+                       {{ 'checked' if m.id in sub.assignee_ids }}>
+                {{ m.name }}
+              </label>
+              {% endfor %}
+            </form>
+          </details>
+          {% endif %}
+          {% if sub.is_running %}
+            <button class="running" hx-post="/tasks/{{ sub.id }}/timer/stop"
+                    hx-target="#task-{{ task.id }}" hx-swap="outerHTML">⏹</button>
+          {% else %}
+            <button hx-post="/tasks/{{ sub.id }}/timer/start"
+                    hx-target="#task-{{ task.id }}" hx-swap="outerHTML">▶</button>
+          {% endif %}
+          <button class="danger" hx-delete="/tasks/{{ sub.id }}"
+                  hx-target="#subtask-{{ sub.id }}" hx-swap="outerHTML"
+                  hx-confirm="Delete this subtask?">✕</button>
+        </span>
+      </li>
+    {% endfor %}
+    <li class="subtask add">
+      <form class="row" hx-post="/tasks/{{ task.id }}/subtasks"
+            hx-target="#task-{{ task.id }}" hx-swap="outerHTML">
+        <input name="title" placeholder="Add subtask" required maxlength="300">
+        <select name="priority">
+          {% for p in priorities %}<option value="{{ p }}" {{ 'selected' if p == 'med' }}>{{ p }}</option>{% endfor %}
+        </select>
+        {% if task.project.members %}
+        <select name="assignee" multiple size="1" title="Assign one or more people">
+          {% for m in task.project.members %}<option value="{{ m.id }}">{{ m.name }}</option>{% endfor %}
+        </select>
+        {% endif %}
+        <input type="date" name="due">
+        <button type="submit">+</button>
+      </form>
+    </li>
+  </ul>
+  {% endif %}
+</li>
